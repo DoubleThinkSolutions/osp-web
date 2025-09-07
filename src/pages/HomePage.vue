@@ -14,30 +14,28 @@
 
     <!-- Main Content -->
     <div class="main-content">
-      
-      <!-- View Toggle Button -->
-      <div class="view-toggle">
+
+      <div class="top-right-controls">
+        <!-- Coordinate Search Bar -->
+        <div class="navigate-container">
+          <input 
+            v-model="coordInput"
+            type="text" 
+            placeholder="Lat, Lng"
+            @keyup.enter="navigateToCoordinate"
+          />
+          <button @click="navigateToCoordinate">Go</button>
+        </div>
+
+        <!-- Filter Icon Button -->
         <button 
-          @click="currentView = 'map'" 
-          :class="{ active: currentView === 'map' }"
-          class="toggle-btn"
+          @click="showFilters = !showFilters" 
+          class="filter-toggle-btn" 
+          title="Open Filters"
         >
-          Map View
-        </button>
-        <button 
-          @click="currentView = 'grid'" 
-          :class="{ active: currentView === 'grid' }"
-          class="toggle-btn"
-        >
-          Grid View
+          <img src="../assets/icons/filter_icon.svg" alt="Filter" class="icon" />
         </button>
       </div>
-
-      <!-- Filter Toggle Button -->
-      <button @click="showFilters = !showFilters" class="filter-toggle-btn">
-        <span>🔍</span>
-        Filters
-      </button>
 
       <!-- Filter Overlay -->
       <div v-if="showFilters" class="filter-overlay">
@@ -88,15 +86,6 @@
 
       <!-- Map View -->
       <div v-if="currentView === 'map'" class="map-container content-area">
-        <div class="navigate-container">
-          <input 
-            v-model="coordInput"
-            type="text" 
-            placeholder="Enter Lat, Lng"
-            @keyup.enter="navigateToCoordinate"
-          />
-          <button @click="navigateToCoordinate">Go</button>
-        </div>
         <l-map 
           ref="mapRef" 
           v-model:zoom="mapZoom" 
@@ -118,7 +107,6 @@
 
         <div v-if="hoveredMediaItem" class="hover-preview">
           <img :src="hoveredMediaItem.thumbnailUrl" :alt="hoveredMediaItem.title" />
-          <span>{{ hoveredMediaItem.title }}</span>
         </div>
       </div>
       
@@ -317,23 +305,39 @@ const formatDateTime = (dateStr, timeStr) => {
 };
 
 /**
- * Formats an ISO 8601 date string into a user-friendly, local-timezone format.
+ * Formats an ISO 8601 date string to show the unambiguous UTC time.
+ * This ensures the displayed time is consistent for all viewers, regardless of their local timezone.
  * @param {string} dateString - The ISO date string from the API (e.g., "2023-10-27T10:30:00Z").
- * @returns {string} A formatted local date and time string.
+ * @returns {string} A formatted UTC date and time string.
  */
 const formatDate = (dateString) => {
   if (!dateString) return 'Date not available';
   
   const date = new Date(dateString);
   
-  // Check if the date is valid before formatting
   if (isNaN(date.getTime())) {
     return 'Invalid date';
   }
   
-  // toLocaleString() correctly converts the date to the user's browser timezone.
-  // We can pass options for more control over the output format.
-  const options = {
+  // Options to format the date in the UTC timezone. This is the "media time".
+  const utcOptions = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+    timeZoneName: 'short',
+  };
+  const utcTimeStr = date.toLocaleString('en-US', utcOptions); // Use en-US for consistent UTC format
+  
+  // If the user's browser is already in UTC, we don't need to show a separate local time.
+  if (date.getTimezoneOffset() === 0) {
+    return utcTimeStr;
+  }
+
+  // Options for the user's local time for additional context.
+  const localOptions = {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -341,8 +345,10 @@ const formatDate = (dateString) => {
     minute: '2-digit',
     timeZoneName: 'short',
   };
-  
-  return date.toLocaleString(undefined, options); // 'undefined' uses the browser's default locale.
+  const localTimeStr = date.toLocaleString(undefined, localOptions); // 'undefined' uses the browser's default locale.
+
+  // Return a comprehensive string showing the media's universal time and the viewer's local time.
+  return `${utcTimeStr} (Your time: ${localTimeStr})`;
 };
 
 const getLocalMidnight = (dateStr) => {
@@ -622,10 +628,31 @@ watchEffect(() => {
   position: relative;
 }
 
+.navigate-container {
+  display: flex;
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  box-shadow: 0 4px S12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.top-right-controls {
+  position: absolute;
+  top: var(--header-inset, 20px);
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* Aligns the smaller filter button to the right */
+  gap: 12px;
+}
+
 /* View Toggle */
 .view-toggle {
   position: absolute;
-  top: 20px;
+  top: var(--header-inset, 20px);
   left: 20px;
   z-index: 1000;
   display: flex;
@@ -660,16 +687,7 @@ watchEffect(() => {
 }
 
 .navigate-container {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
   display: flex;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
 }
 
 .navigate-container input {
@@ -677,46 +695,52 @@ watchEffect(() => {
   border: none;
   font-size: 0.9rem;
   outline: none;
-  width: 220px;
+  background-color: transparent;
 }
 
 .navigate-container button {
   padding: 10px 20px;
   border: none;
-  background-color: #007bff;
-  color: white;
+  background-color: transparent;
+  color: #007bff; /* Changed to match text style */
+  font-weight: 500;
   cursor: pointer;
   font-size: 0.9rem;
   transition: background-color 0.2s ease;
-  border-left: 1px solid #0056b3;
+  /* Add a subtle separator */
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .navigate-container button:hover {
-  background-color: #0056b3;
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Filter Toggle Button */
 .filter-toggle-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-  padding: 10px 16px;
-  border: none;
-  background-color: #fff;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
   color: #333;
   border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
+  justify-content: center;
+  font-size: 1.4rem; /* Makes the icon bigger */
   transition: all 0.2s ease;
 }
 
+.filter-toggle-btn .icon {
+  max-width: 20px;
+  max-height: 20px;
+}
+
 .filter-toggle-btn:hover {
-  background-color: #f0f0f0;
+  background-color: rgba(255, 255, 255, 0.9);
   transform: translateY(-1px);
 }
 
@@ -727,7 +751,8 @@ watchEffect(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.3); /* Darken the backdrop slightly */
+  backdrop-filter: blur(4px); /* Blur the map behind the overlay */
   z-index: 2000;
   display: flex;
   align-items: center;
@@ -736,22 +761,26 @@ watchEffect(() => {
 }
 
 .filter-panel {
-  background-color: white;
-  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 16px; /* Larger radius for a larger panel */
   padding: 0;
   width: 100%;
   max-width: 500px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden; /* Hide content while it animates in */
+  display: flex;
+  flex-direction: column;
 }
 
 .filter-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 20px 0 20px;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 20px 24px 0 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   padding-bottom: 15px;
   margin-bottom: 20px;
 }
@@ -784,7 +813,8 @@ watchEffect(() => {
 }
 
 .filter-content {
-  padding: 0 20px 20px 20px;
+  padding: 0 24px 24px 24px;
+  overflow-y: auto;
 }
 
 .filter-row {
@@ -808,15 +838,17 @@ watchEffect(() => {
 
 .filter-group input {
   padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.03); /* Very subtle background */
+  border-radius: 8px;
   font-size: 0.9rem;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .filter-group input:focus {
   outline: none;
   border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
 }
 
 .filter-actions {
@@ -828,18 +860,19 @@ watchEffect(() => {
 
 .clear-button {
   padding: 12px 24px;
-  border: 1px solid #ddd;
-  background-color: white;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background-color: transparent;
   color: #333;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.9rem;
+  font-weight: 500;
   transition: all 0.2s ease;
 }
 
 .clear-button:hover {
-  background-color: #f8f9fa;
-  border-color: #999;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.2);
 }
 
 .filter-button {
@@ -855,6 +888,7 @@ watchEffect(() => {
 
 .filter-button:hover {
   background-color: #0056b3;
+  transform: translateY(-1px);
 }
 
 /* Grid View */
@@ -962,10 +996,12 @@ watchEffect(() => {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 1000;
-  background: white;
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
   padding: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   text-align: center;
 }
 
@@ -978,13 +1014,15 @@ watchEffect(() => {
   background-color: #007bff;
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
+  padding: 12px 24px;
+  border-radius: 6px;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
 .retry-button:hover {
   background-color: #0056b3;
+  transform: translateY(-1px);
 }
 
 /* Mobile Responsive */

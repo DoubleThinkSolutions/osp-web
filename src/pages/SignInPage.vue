@@ -10,7 +10,7 @@
 
       <div class="social-signin-container">
 
-        <GoogleLogin :callback="handleGoogleLoginSuccess">
+        <GoogleLogin :callback="handleGoogleLoginSuccess" :redirect_uri="googleRedirectUri">
           <button 
             class="social-button google-button"
             :disabled="loading"
@@ -46,6 +46,8 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { apiClient } from '../services/apiClient';
+
+const googleRedirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI;
 
 const router = useRouter();
 const loading = ref(false);

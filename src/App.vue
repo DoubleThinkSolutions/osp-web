@@ -4,7 +4,7 @@
     <!-- Regular header for non-fullscreen pages -->
     <header class="app-header" v-if="!isFullscreenRoute">
       <h1>Open Source Panopticon</h1>
-      <nav>
+      <!--<nav>
         <router-link to="/" class="nav-link">Home</router-link>
         <template v-if="isAuthenticated">
           <router-link to="/account-settings" class="nav-link">Account</router-link>
@@ -17,14 +17,14 @@
             Sign In
           </router-link>
         </template>
-      </nav>
+      </nav> -->
     </header>
 
     <!-- Minimal overlay header for fullscreen pages -->
     <header class="overlay-header" v-if="isFullscreenRoute">
       <div class="overlay-nav">
         <div class="brand">Open Source Panopticon</div>
-        <nav class="overlay-nav-links">
+        <!--<nav class="overlay-nav-links">
           <template v-if="isAuthenticated">
             <router-link to="/account-settings" class="overlay-nav-link">Account</router-link>
             <button @click="handleSignOut" class="overlay-signout-button">
@@ -36,7 +36,7 @@
               Sign In
             </router-link>
           </template>
-        </nav>
+        </nav> -->
       </div>
     </header>
     <main :class="{ 'fullscreen': isFullscreenRoute }">
@@ -111,6 +111,7 @@ html, body {
   width: 100vw;
   display: flex;
   flex-direction: column;
+  --header-inset: 75px; 
 }
 
 /* Constrained layout for regular pages */
@@ -140,9 +141,14 @@ html, body {
   left: 0;
   right: 0;
   z-index: 500;
-  background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 100%);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0,0,0,0.1);
+  /* Use a gradient that fades to transparent */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 100%);
+  backdrop-filter: blur(8px);
+  pointer-events: none; /* Allow clicks to pass through the empty parts of the header */
+}
+
+.overlay-header > * {
+  pointer-events: auto;
 }
 
 .overlay-nav {
@@ -181,32 +187,39 @@ html, body {
 }
 
 .overlay-signout-button {
-  background-color: #dc3545;
-  color: white;
-  border: none;
+  background-color: rgba(220, 53, 69, 0.1); /* Transparent red */
+  color: #c82333; /* Darker red text */
+  border: 1px solid rgba(220, 53, 69, 0.2);
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: 6px; /* Slightly rounder */
   cursor: pointer;
   font-size: 0.9rem;
+  font-weight: 500;
   transition: all 0.2s ease;
 }
 
 .overlay-signout-button:hover {
-  background-color: #c82333;
+  background-color: #dc3545; /* Solid red on hover */
+  color: white;
+  border-color: #dc3545;
 }
 
 .overlay-signin-link {
-  background-color: #007bff;
-  color: white;
+  background-color: rgba(0, 123, 255, 0.1); /* Transparent blue */
+  color: #0056b3; /* Darker blue text */
   text-decoration: none;
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: 6px; /* Slightly rounder */
   font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid rgba(0, 123, 255, 0.2);
   transition: all 0.2s ease;
 }
 
 .overlay-signin-link:hover {
-  background-color: #0056b3;
+  background-color: #007bff; /* Solid blue on hover */
+  color: white;
+  border-color: #007bff;
 }
 
 main {
@@ -217,7 +230,6 @@ main.fullscreen {
   height: calc(100vh - 60px);
   width: 100vw;
   overflow: hidden;
-  margin-top: 60px;
 }
 
 .nav-link {
