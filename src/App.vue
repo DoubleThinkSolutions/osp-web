@@ -1,44 +1,7 @@
 <!-- src/App.vue -->
 <template>
   <div class="app-container">
-    <!-- Regular header for non-fullscreen pages -->
-    <header class="app-header" v-if="!isFullscreenRoute">
-      <h1>Open Source Panopticon</h1>
-      <!--<nav>
-        <router-link to="/" class="nav-link">Home</router-link>
-        <template v-if="isAuthenticated">
-          <router-link to="/account-settings" class="nav-link">Account</router-link>
-          <button @click="handleSignOut" class="signout-button">
-            Sign Out
-          </button>
-        </template>
-        <template v-else>
-          <router-link to="/signin" class="signin-link">
-            Sign In
-          </router-link>
-        </template>
-      </nav> -->
-    </header>
-
-    <!-- Minimal overlay header for fullscreen pages -->
-    <header class="overlay-header" v-if="isFullscreenRoute">
-      <div class="overlay-nav">
-        <div class="brand">Open Source Panopticon</div>
-        <!--<nav class="overlay-nav-links">
-          <template v-if="isAuthenticated">
-            <router-link to="/account-settings" class="overlay-nav-link">Account</router-link>
-            <button @click="handleSignOut" class="overlay-signout-button">
-              Sign Out
-            </button>
-          </template>
-          <template v-else>
-            <router-link to="/signin" class="overlay-signin-link">
-              Sign In
-            </router-link>
-          </template>
-        </nav> -->
-      </div>
-    </header>
+    <Sidebar />
     <main :class="{ 'fullscreen': isFullscreenRoute }">
       <!-- The router will render the matched component here -->
       <router-view />
@@ -49,6 +12,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { RouterView, RouterLink, useRoute } from 'vue-router';
+import Sidebar from './components/Sidebar.vue';
 
 const route = useRoute();
 
@@ -95,7 +59,6 @@ onUnmounted(() => {
 
 html, body {
   height: 100%;
-  overflow: hidden; /* Prevent body scroll on fullscreen routes */
 }
 
 #app {
@@ -110,12 +73,17 @@ html, body {
   height: 100vh;
   width: 100vw;
   display: flex;
-  flex-direction: column;
-  --header-inset: 75px; 
+  flex-direction: row;
+  --header-inset: 75px;
+  --sidebar-width: 60px;
 }
 
 /* Constrained layout for regular pages */
 .app-container:not(:has(.fullscreen)) {
+  max-width: none;
+}
+
+.app-container:not(:has(.fullscreen)) main {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
@@ -224,12 +192,26 @@ html, body {
 
 main {
   flex: 1;
+  margin-left: var(--sidebar-width);
+  transition: margin-left 0.3s ease;
+  overflow-y: auto;
+  height: 100vh;
 }
 
 main.fullscreen {
-  height: calc(100vh - 60px);
-  width: 100vw;
+  height: 100vh;
+  width: calc(100vw - var(--sidebar-width));
   overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  main {
+    margin-left: 0;
+  }
+
+  main.fullscreen {
+    width: 100vw;
+  }
 }
 
 .nav-link {

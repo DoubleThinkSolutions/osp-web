@@ -4,6 +4,7 @@ import HomePage from '../pages/HomePage.vue';
 import SignInPage from '../pages/SignInPage.vue';
 import MediaDetailPage from '../pages/MediaDetailPage.vue';
 import AccountSettingsPage from '../pages/AccountSettingsPage.vue';
+import AboutPage from '../pages/AboutPage.vue';
 
 // This function replaces PrivateRoute. It's a "Navigation Guard".
 const requireAuth = (to, from, next) => {
@@ -26,6 +27,11 @@ const routes = [
     path: '/signin',
     name: 'SignIn',
     component: SignInPage,
+  },
+  {
+    path: '/about',
+    name: 'About',
+    component: AboutPage,
   },
   {
     path: '/media/:id', // The :id parameter is defined here

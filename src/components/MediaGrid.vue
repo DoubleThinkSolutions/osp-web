@@ -15,7 +15,7 @@
 </template>
 
 <script setup>
-import { formatDate } from '../utils/dateUtils';
+import { formatDate } from '../utils/DateUtils';
 
 defineProps({
   mediaItems: {

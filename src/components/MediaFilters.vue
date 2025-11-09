@@ -75,7 +75,7 @@ const apply = () => {
 }
 
 .filter-panel {
-  background-color: var(--background-glass-light);
+  background-color: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
   border-radius: 16px;
@@ -103,9 +103,19 @@ const apply = () => {
   font-size: 24px;
   color: #666;
   cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
   transition: all 0.2s ease;
+  line-height: 1;
 }
-.close-btn:hover { background-color: #f0f0f0; }
+.close-btn:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+.close-btn:active,
+.close-btn:focus {
+  background-color: rgba(0, 0, 0, 0.12);
+  outline: none;
+}
 
 .filter-content { padding: 20px 24px 24px; }
 .filter-row { display: flex; gap: 1rem; margin-bottom: 1rem; }
