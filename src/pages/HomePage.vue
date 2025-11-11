@@ -3,10 +3,11 @@
     <ErrorState v-if="error" :error="error" @retry="retryFetch" />
 
     <div v-else class="main-content">
-      <MapControls 
+      <MapControls
         v-if="currentView === 'map'"
         @toggle-filters="showFilters = true"
         @navigate-to="handleNavigation"
+        @change-style="handleStyleChange"
       />
 
       <MediaFilters 
@@ -25,6 +26,7 @@
         v-if="currentView === 'map'"
         ref="mapViewRef"
         :media-items="mediaItems"
+        :map-style="currentMapStyle"
         @map-ready="handleMapReady"
         @map-move="handleMapMove"
         @open-modal="items => openModal(items)"
@@ -75,6 +77,7 @@ function debounce(func, wait) {
 const currentView = ref('map');
 const showFilters = ref(false);
 const mapViewRef = ref(null);
+const currentMapStyle = ref('osm');
 
 const fetchParams = reactive({
   view: 'map',
@@ -135,6 +138,13 @@ const handleNavigation = ({ lat, lng }) => {
     // MapLibre expects [lng, lat] for coordinates
     mapViewRef.value.flyTo([lng, lat], 18);
   }
+};
+
+const handleStyleChange = (styleId) => {
+  console.log('handleStyleChange called with:', styleId);
+  console.log('Current style:', currentMapStyle.value);
+  currentMapStyle.value = styleId;
+  console.log('New style:', currentMapStyle.value);
 };
 
 // --- Watchers ---

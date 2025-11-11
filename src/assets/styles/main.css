@@ -10,7 +10,7 @@
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
-  --header-inset: 20px; /* From your original code */
+  --header-inset: 5px;
 }
 
 /* 2. Base App Layout */
