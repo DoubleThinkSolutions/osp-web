@@ -64,6 +64,10 @@
                   {{ currentItem.location.lat.toFixed(6) }}°N, {{ currentItem.location.lng.toFixed(6) }}°E
                 </span>
               </div>
+              <div v-if="currentItem.altitude !== null && currentItem.altitude !== undefined" class="info-item">
+                <span class="info-label">Altitude</span>
+                <span class="info-value altitude">{{ currentItem.altitude.toFixed(2) }} m</span>
+              </div>
             </div>
           </div>
 
@@ -372,6 +376,12 @@ const getTrustClass = (score) => {
   font-family: 'Courier New', monospace;
   font-size: 13px;
   color: #2563eb;
+}
+
+.info-value.altitude {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #16a34a;
 }
 
 .info-value.media-type {

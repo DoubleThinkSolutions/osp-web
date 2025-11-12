@@ -25,17 +25,17 @@ self.onmessage = (event) => {
         fileUrl: item.image_url,
         mediaType: item.image_url.toLowerCase().endsWith('.mp4') ? 'video' : 'image',
         // Keep the original string for display purposes in the modal
-        createdAt: item.capture_time, 
-        // --- NEW: Add a numeric timestamp for MapLibre ---
+        createdAt: item.capture_time,
         // getTime() returns milliseconds. If the date is invalid, default to 0.
           createdAtTimestamp: captureDate ? captureDate.getTime() : 0,
         location: { lat: item.lat, lng: item.lng },
         // coordinates can be omitted here as MapView generates GeoJSON from `location`
         // but keeping it is fine if other parts of your app use it.
-        coordinates: [item.lat, item.lng], 
+        coordinates: [item.lat, item.lng],
         orientation: item.orientation,
         trustScore: item.trust_score,
-        userId: item.user_id
+        userId: item.user_id,
+        altitude: item.altitude
       }
     });
   

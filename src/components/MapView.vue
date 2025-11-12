@@ -113,11 +113,12 @@ const mediaGeoJSON = computed(() => ({
     // We can use the item's own ID, but since it's a string, we'll let MapLibre handle it.
     // We add the original ID to properties for our lookup.
     properties: {
-      ...item // Pass all original item data
+      ...item, // Pass all original item data
+      altitude: item.altitude || 0 // Ensure altitude is available for styling
     },
     geometry: {
       type: "Point",
-      coordinates: [item.location.lng, item.location.lat]
+      coordinates: [item.location.lng, item.location.lat, item.altitude || 0] // Add altitude as Z coordinate
     }
   }))
 }));
@@ -138,11 +139,45 @@ const parseFeatureProperties = (props) => {
   return parsedProps;
 };
 
+// Function to create a circular marker icon
+const createMarkerIcon = () => {
+  const size = 24;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  // Draw outer circle (white border)
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 2 - 1, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+
+  // Draw inner circle (blue)
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 2 - 3, 0, Math.PI * 2);
+  ctx.fillStyle = '#11b4da';
+  ctx.fill();
+
+  // Return ImageData object expected by MapLibre
+  return {
+    width: size,
+    height: size,
+    data: ctx.getImageData(0, 0, size, size).data
+  };
+};
+
 // Function to add the sources and layers. It assumes the style is loaded.
 const addDataToMap = () => {
   if (!map.value) return;
 
   const mapInstance = map.value;
+
+  // Add the marker icon if it doesn't exist
+  if (!mapInstance.hasImage('circle-marker')) {
+    const markerIcon = createMarkerIcon();
+    mapInstance.addImage('circle-marker', markerIcon);
+  }
 
   // Add source if it doesn't exist
   if (!mapInstance.getSource('media')) {
@@ -173,8 +208,33 @@ const addDataToMap = () => {
   }
   if (!mapInstance.getLayer('unclustered-point')) {
     mapInstance.addLayer({
-      id: 'unclustered-point', type: 'circle', source: 'media', filter: ['!', ['has', 'point_count']],
-      paint: { 'circle-color': '#11b4da', 'circle-radius': 6, 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
+      id: 'unclustered-point',
+      type: 'circle',
+      source: 'media',
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-color': [
+          'interpolate',
+          ['linear'],
+          ['coalesce', ['get', 'altitude'], 0],
+          0, '#11b4da',     // Sea level - original blue
+          500, '#3d9aff',   // 500m - brighter blue
+          1000, '#6b7eff',  // 1000m - purple-blue
+          2000, '#9f5fff'   // 2000m+ - purple
+        ],
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['coalesce', ['get', 'altitude'], 0],
+          0, 6,      // At 0m altitude, radius is 6px
+          500, 9,    // At 500m altitude, radius is 9px
+          1000, 12,  // At 1000m altitude, radius is 12px
+          2000, 16   // At 2000m+ altitude, radius is 16px
+        ],
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#fff',
+        'circle-opacity': 0.9
+      }
     });
   }
 };
@@ -221,6 +281,12 @@ const cleanupMapEvents = () => {
 const addMediaLayers = () => {
   if (!map.value) return;
 
+  // Add the marker icon if it doesn't exist
+  if (!map.value.hasImage('circle-marker')) {
+    const markerIcon = createMarkerIcon();
+    map.value.addImage('circle-marker', markerIcon);
+  }
+
   // Add the media source
   if (!map.value.getSource('media')) {
     map.value.addSource('media', {
@@ -257,13 +323,35 @@ const addMediaLayers = () => {
       layout: { 'text-field': '{point_count_abbreviated}', 'text-font': ['Noto Sans Regular'], 'text-size': 12 }
     });
 
-    // Add unclustered point layer
+    // Add unclustered point layer with altitude-based visualization
     map.value.addLayer({
       id: 'unclustered-point',
       type: 'circle',
       source: 'media',
       filter: ['!', ['has', 'point_count']],
-      paint: { 'circle-color': '#11b4da', 'circle-radius': 6, 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
+      paint: {
+        'circle-color': [
+          'interpolate',
+          ['linear'],
+          ['coalesce', ['get', 'altitude'], 0],
+          0, '#11b4da',     // Sea level - original blue
+          500, '#3d9aff',   // 500m - brighter blue
+          1000, '#6b7eff',  // 1000m - purple-blue
+          2000, '#9f5fff'   // 2000m+ - purple
+        ],
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['coalesce', ['get', 'altitude'], 0],
+          0, 6,      // At 0m altitude, radius is 6px
+          500, 9,    // At 500m altitude, radius is 9px
+          1000, 12,  // At 1000m altitude, radius is 12px
+          2000, 16   // At 2000m+ altitude, radius is 16px
+        ],
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#fff',
+        'circle-opacity': 0.9
+      }
     });
   }
 
@@ -324,6 +412,8 @@ onMounted(() => {
     style: mapStyles[props.mapStyle],
     center: [0, 0],
     zoom: 1,
+    pitch: 45, // Enable 3D perspective
+    maxPitch: 85, // Allow steep viewing angles
   });
 
   map.value.on('load', () => {
